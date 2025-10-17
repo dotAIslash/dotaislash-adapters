@@ -10,9 +10,14 @@ Version: 1.0.0
 
 Adapters convert VERSA `.ai/` configurations into formats that specific AI coding tools understand.
 
-Currently supported:
-- **Cursor** - Transforms to `.cursorrules` markdown format
-- **Windsurf** - Transforms to `.windsurf/config.json` format
+**v1.0.0 Supported Tools:**
+- ✅ **Cursor** - Transforms to `.cursorrules` markdown format
+- ✅ **Windsurf** - Transforms to `.windsurf/config.json` format
+
+**Planned v1.1:**
+- 🔴 **Cline** - `.clinerules` support
+- 🔴 **Aider** - `.aider.conf.yml` support
+- 🔴 **Continue** - `.continue/config.yaml` support
 
 ---
 
