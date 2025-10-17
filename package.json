@@ -1,0 +1,57 @@
+{
+  "name": "@dotaislash/adapters",
+  "version": "1.0.0",
+  "description": "Adapters to transform VERSA configs to tool-specific formats",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./cursor": {
+      "types": "./dist/adapters/cursor.d.ts",
+      "import": "./dist/adapters/cursor.js"
+    },
+    "./windsurf": {
+      "types": "./dist/adapters/windsurf.d.ts",
+      "import": "./dist/adapters/windsurf.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src --ext .ts",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "versa",
+    "adapters",
+    "cursor",
+    "windsurf",
+    "ai-tools",
+    "config-transformation"
+  ],
+  "dependencies": {
+    "@dotaislash/schemas": "link:@dotaislash/schemas"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.31",
+    "typescript": "^5.8.3",
+    "vitest": "^1.2.0",
+    "eslint": "^8.57.1",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0"
+  },
+  "engines": {
+    "node": ">=22.16.0"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dotAIslash/dotaislash-adapters.git"
+  },
+  "author": "Alphin Tom <alphinctom@gmail.com>"
+}

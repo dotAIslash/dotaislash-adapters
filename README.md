@@ -1,483 +1,274 @@
-<div align="center">
+# @dotaislash/adapters
 
-<img src="logo.png" alt="dotAIslash Logo" width="120" />
+**Transform VERSA configurations to tool-specific formats**
 
-# 🔌 VERSA Adapters
-
-### Transform VERSA configs to native tool formats
-
-[![npm](https://img.shields.io/npm/v/@dotaislash/adapters?style=for-the-badge&logo=npm&color=violet)](https://www.npmjs.com/package/@dotaislash/adapters)
-[![License](https://img.shields.io/badge/License-MIT-cyan?style=for-the-badge)](LICENSE)
-[![Discussions](https://img.shields.io/github/discussions/dotAIslash/dotaislash-adapters?style=for-the-badge&logo=github&color=lime)](https://github.com/dotAIslash/dotaislash-adapters/discussions)
-
-[**Supported Tools**](#-supported-tools) · [**VERSA Spec**](https://github.com/dotAIslash/dotaislash-spec) · [**Build an Adapter**](#-build-your-own-adapter)
-
-</div>
+Version: 1.0.0
 
 ---
 
-## 🎯 What are Adapters?
+## Overview
 
-**Adapters transform** your portable `.ai/` folder into native configuration formats for specific AI coding tools.
+Adapters convert VERSA `.ai/` configurations into formats that specific AI coding tools understand.
 
-```
-.ai/ folder  →  Adapter  →  Tool-specific config
-
-VERSA        →  Cursor   →  .cursorrules + workspace.json
-VERSA        →  Windsurf →  .windsurf/config.json
-VERSA        →  Aider    →  .aider.conf.yml
-```
-
-**Write once, run everywhere.**
+Currently supported:
+- **Cursor** - Transforms to `.cursorrules` markdown format
+- **Windsurf** - Transforms to `.windsurf/config.json` format
 
 ---
 
-## ✨ Why Adapters?
-
-### Without Adapters
-```
-your-project/
-├── .cursorrules              # Cursor config
-├── .aider.conf.yml           # Aider config
-├── .windsurf/config.json     # Windsurf config
-└── claude-project.json       # Claude config
-```
-😫 **4 different files, 4 different formats, constant sync issues**
-
-### With VERSA + Adapters
-```
-your-project/
-└── .ai/
-    ├── context.json          # One source of truth
-    └── profiles/
-        ├── cursor.json       # Minimal overrides
-        └── windsurf.json     # Minimal overrides
-```
-✨ **One folder, automatic transformation, always in sync**
-
----
-
-## 🚀 Supported Tools
-
-<table>
-<tr>
-<td width="50%">
-
-### ✅ **Production Ready**
-
-- 🟣 **Cursor** - `.cursorrules` + workspace settings
-- 🔵 **Windsurf** - Native configuration
-- 🟢 **Claude Projects** - Context + instructions
-- 🟡 **Aider** - YAML configuration
-
-</td>
-<td width="50%">
-
-### ⏳ **Coming Soon**
-
-- ⚪ **GitHub Copilot** - Settings + context
-- ⚪ **Cody** - Sourcegraph integration
-- ⚪ **Tabnine** - Configuration
-- ⚪ **Cline** - VSCode extension
-
-</td>
-</tr>
-</table>
-
----
-
-## 📦 Installation
+## Installation
 
 ```bash
-# npm
-npm install @dotaislash/adapters
-
-# yarn
-yarn add @dotaislash/adapters
-
-# pnpm
-pnpm add @dotaislash/adapters
+bun add @dotaislash/adapters
 ```
 
 ---
 
-## 🔧 Usage
-
-### CLI Usage
-
-```bash
-# Transform for all tools
-versa adapt
-
-# Transform for specific tool
-versa adapt --tool cursor
-versa adapt --tool windsurf
-versa adapt --tool aider
-
-# Preview without writing
-versa adapt --tool cursor --dry-run
-
-# Custom output location
-versa adapt --tool cursor --output ./config/cursor
-```
-
-### Programmatic Usage
-
-```typescript
-import { CursorAdapter, WindsurfAdapter } from '@dotaislash/adapters';
-import { readVersaConfig } from '@dotaislash/cli';
-
-// Read VERSA config
-const versaConfig = await readVersaConfig('.ai');
-
-// Transform to Cursor format
-const cursorAdapter = new CursorAdapter();
-const cursorConfig = await cursorAdapter.transform(versaConfig);
-
-// Write to Cursor files
-await cursorConfig.writeTo('.cursorrules');
-
-// Transform to Windsurf format
-const windsurfAdapter = new WindsurfAdapter();
-const windsurfConfig = await windsurfAdapter.transform(versaConfig);
-await windsurfConfig.writeTo('.windsurf/config.json');
-```
-
----
-
-## 🎨 Adapter Details
+## Usage
 
 ### Cursor Adapter
 
-Transforms VERSA config to Cursor's `.cursorrules` and workspace settings.
+Transform VERSA config to Cursor `.cursorrules`:
 
-**Output:**
-```
-project/
-├── .cursorrules              # Rules as plain text
-└── .vscode/
-    └── settings.json         # Cursor-specific settings
-```
-
-**Example:**
 ```typescript
-import { CursorAdapter } from '@dotaislash/adapters';
+import { cursorAdapter } from '@dotaislash/adapters/cursor';
+import { loadContext } from '@dotaislash/cli';
 
-const adapter = new CursorAdapter({
-  rulesFormat: 'markdown',    // or 'plaintext'
-  includeWorkspace: true,
-  mergeExisting: true
-});
+const context = loadContext('.ai');
+const cursorrules = cursorAdapter.transform(context);
 
-const result = await adapter.transform(versaConfig);
+// Write to .cursorrules file
+import { writeFileSync } from 'fs';
+writeFileSync('.cursorrules', cursorrules);
+```
+
+**Output Format:**
+```markdown
+<!-- Generated from VERSA configuration -->
+
+# My Project
+
+Project description here
+
+## AI Assistant Configuration
+
+**Model:** claude-sonnet-4
+**Temperature:** 0.7
+
+## Guidelines
+
+[Your rules here]
+
+## Relevant Files
+
+- `src/**/*.ts`
+- `tests/**/*.test.ts`
 ```
 
 ---
 
 ### Windsurf Adapter
 
-Transforms VERSA config to Windsurf's native JSON format.
-
-**Output:**
-```
-project/
-└── .windsurf/
-    ├── config.json
-    └── agents/
-        └── *.json
-```
-
-**Example:**
-```typescript
-import { WindsurfAdapter } from '@dotaislash/adapters';
-
-const adapter = new WindsurfAdapter({
-  version: '2.0',
-  prettify: true
-});
-
-const result = await adapter.transform(versaConfig);
-```
-
----
-
-### Aider Adapter
-
-Transforms VERSA config to Aider's YAML configuration.
-
-**Output:**
-```
-project/
-└── .aider.conf.yml
-```
-
-**Example:**
-```typescript
-import { AiderAdapter } from '@dotaislash/adapters';
-
-const adapter = new AiderAdapter({
-  model: 'gpt-4',
-  autoCommit: false
-});
-
-const result = await adapter.transform(versaConfig);
-```
-
----
-
-### Claude Adapter
-
-Transforms VERSA config to Claude Projects format.
-
-**Output:**
-```
-project/
-└── .claude/
-    ├── project.json
-    └── instructions.md
-```
-
-**Example:**
-```typescript
-import { ClaudeAdapter } from '@dotaislash/adapters';
-
-const adapter = new ClaudeAdapter({
-  projectName: 'My Project',
-  includeInstructions: true
-});
-
-const result = await adapter.transform(versaConfig);
-```
-
----
-
-## 🎯 Mapping Reference
-
-### How VERSA maps to each tool
-
-| VERSA Concept | Cursor | Windsurf | Aider | Claude |
-|---------------|--------|----------|-------|--------|
-| Rules | `.cursorrules` | `rules/*.md` | Comments | Instructions |
-| Settings | Workspace | `config.json` | `.aider.conf.yml` | `project.json` |
-| Agents | N/A | `agents/*.json` | N/A | N/A |
-| Tools | N/A | MCP servers | N/A | N/A |
-| Permissions | Workspace | `config.json` | CLI flags | N/A |
-
----
-
-## 🧪 Testing Your Adapter
-
-```bash
-# Test transformation
-pnpm test:adapter cursor
-
-# Validate output
-pnpm test:validate cursor-output
-
-# Compare with expected
-pnpm test:compare cursor
-```
-
----
-
-## 🛠️ Build Your Own Adapter
-
-### 1. Extend BaseAdapter
+Transform VERSA config to Windsurf JSON:
 
 ```typescript
-import { BaseAdapter, AdapterResult } from '@dotaislash/adapters';
-import { VersaConfig } from '@dotaislash/schemas';
+import { windsurfAdapter } from '@dotaislash/adapters/windsurf';
+import { loadContext } from '@dotaislash/cli';
 
-export class MyToolAdapter extends BaseAdapter {
-  async transform(config: VersaConfig): Promise<AdapterResult> {
+const context = loadContext('.ai');
+const config = windsurfAdapter.transform(context, { format: true });
+
+// Write to .windsurf/config.json
+import { mkdirSync, writeFileSync } from 'fs';
+mkdirSync('.windsurf', { recursive: true });
+writeFileSync('.windsurf/config.json', config);
+```
+
+**Output Format:**
+```json
+{
+  "version": "1.0",
+  "name": "My Project",
+  "model": {
+    "name": "claude-sonnet-4",
+    "temperature": 0.7
+  },
+  "context": {
+    "files": ["src/**/*.ts"],
+    "rules": ["...rule content..."]
+  },
+  "permissions": {
+    "allowedFiles": ["src/**"],
+    "deniedFiles": [".env*"]
+  }
+}
+```
+
+---
+
+## API
+
+### `getAdapter(tool: string)`
+
+Get adapter by tool name:
+
+```typescript
+import { getAdapter } from '@dotaislash/adapters';
+
+const adapter = getAdapter('cursor');
+if (adapter) {
+  const output = adapter.transform(context);
+}
+```
+
+### `listAdapters()`
+
+List all available adapters:
+
+```typescript
+import { listAdapters } from '@dotaislash/adapters';
+
+const tools = listAdapters();
+// ['cursor', 'windsurf']
+```
+
+---
+
+## Adapter Interface
+
+All adapters implement:
+
+```typescript
+interface Adapter<TOutput = string> {
+  name: string;
+  tool: string;
+  version: string;
+  
+  transform(
+    context: Context,
+    options?: AdapterOptions
+  ): TOutput;
+  
+  validate?(output: TOutput): ValidationResult;
+}
+```
+
+### Options
+
+```typescript
+interface AdapterOptions {
+  comments?: boolean;   // Include comments (default: true)
+  format?: boolean;     // Pretty print (default: true)
+  formatOptions?: Record<string, unknown>;
+}
+```
+
+---
+
+## Creating Custom Adapters
+
+Extend `BaseAdapter` to create your own:
+
+```typescript
+import { BaseAdapter } from '@dotaislash/adapters';
+import type { Context, AdapterOptions } from '@dotaislash/adapters';
+
+export class MyToolAdapter extends BaseAdapter<string> {
+  name = 'mytool-adapter';
+  tool = 'mytool';
+  version = '1.0.0';
+
+  transform(context: Context, options?: AdapterOptions): string {
     // Transform logic here
-    const output = {
-      tool_config: {
-        rules: config.rules,
-        settings: this.mapSettings(config.settings)
-      }
-    };
-
-    return {
-      files: [
-        {
-          path: '.mytool/config.json',
-          content: JSON.stringify(output, null, 2)
-        }
-      ],
-      warnings: [],
-      metadata: {
-        adapter: 'mytool',
-        version: '1.0.0'
-      }
-    };
-  }
-
-  private mapSettings(settings: any) {
-    // Map VERSA settings to tool format
-    return {
-      model: settings.model,
-      temperature: settings.temperature
-    };
+    const settings = this.getModelSettings(context);
+    const files = this.getFilePatterns(context);
+    
+    return `Config for MyTool\nModel: ${settings.model}`;
   }
 }
 ```
 
-### 2. Add Tests
+---
+
+## Examples
+
+### Convert All Examples
 
 ```typescript
-import { MyToolAdapter } from './mytool-adapter';
+import { readdirSync } from 'fs';
+import { cursorAdapter, windsurfAdapter } from '@dotaislash/adapters';
+import { loadContext } from '@dotaislash/cli';
 
-describe('MyToolAdapter', () => {
-  it('transforms VERSA config correctly', async () => {
-    const adapter = new MyToolAdapter();
-    const result = await adapter.transform(mockVersaConfig);
-    
-    expect(result.files).toHaveLength(1);
-    expect(result.files[0].path).toBe('.mytool/config.json');
-  });
-});
+const examples = readdirSync('examples');
+
+for (const example of examples) {
+  const context = loadContext(`examples/${example}/.ai`);
+  
+  // Generate Cursor config
+  const cursor = cursorAdapter.transform(context);
+  writeFileSync(
+    `examples/${example}/.cursorrules`,
+    cursor
+  );
+  
+  // Generate Windsurf config
+  const windsurf = windsurfAdapter.transform(context);
+  mkdirSync(`examples/${example}/.windsurf`, { recursive: true });
+  writeFileSync(
+    `examples/${example}/.windsurf/config.json`,
+    windsurf
+  );
+}
 ```
 
-### 3. Register Adapter
+---
 
-```typescript
-// src/index.ts
-export { MyToolAdapter } from './adapters/mytool-adapter';
-```
-
-### 4. Submit PR
+## Testing
 
 ```bash
-git add .
-git commit -m "feat: add MyTool adapter"
-gh pr create --title "Add MyTool adapter"
+bun test
 ```
 
----
-
-## 📚 Adapter API
-
-### BaseAdapter
-
-Base class for all adapters:
-
-```typescript
-abstract class BaseAdapter {
-  abstract transform(config: VersaConfig): Promise<AdapterResult>;
-  
-  validate(config: VersaConfig): ValidationResult;
-  preview(config: VersaConfig): string;
-  supports(feature: string): boolean;
-}
-```
-
-### AdapterResult
-
-```typescript
-interface AdapterResult {
-  files: Array<{
-    path: string;
-    content: string;
-  }>;
-  warnings: string[];
-  metadata: {
-    adapter: string;
-    version: string;
-    timestamp?: string;
-  };
-}
-```
+Tests cover:
+- Transformation accuracy
+- Option handling
+- Edge cases
+- Integration with CLI
 
 ---
 
-## 🎓 Examples
+## Supported Tools
 
-### Transform for CI/CD
-
-```yaml
-# .github/workflows/transform.yml
-name: Transform VERSA Config
-
-on: [push]
-
-jobs:
-  transform:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-      - run: npm install -g @dotaislash/cli @dotaislash/adapters
-      - run: versa adapt --tool cursor --tool windsurf
-      - run: git add .cursorrules .windsurf/
-      - run: git commit -m "chore: update tool configs" || true
-```
-
-### Transform on File Change
-
-```typescript
-import { watch } from 'fs';
-import { CursorAdapter } from '@dotaislash/adapters';
-
-watch('.ai', async (event, filename) => {
-  console.log(`${filename} changed, regenerating configs...`);
-  
-  const adapter = new CursorAdapter();
-  const config = await readVersaConfig('.ai');
-  const result = await adapter.transform(config);
-  
-  await result.writeTo('.');
-  console.log('Configs updated!');
-});
-```
+| Tool | Format | Status | Adapter |
+|------|--------|--------|---------|
+| Cursor | Markdown (.cursorrules) | ✅ v1.0 | `cursorAdapter` |
+| Windsurf | JSON (.windsurf/config.json) | ✅ v1.0 | `windsurfAdapter` |
+| Cline | TBD | 🔜 Planned | - |
+| Aider | TBD | 🔜 Planned | - |
+| Continue | TBD | 🔜 Planned | - |
 
 ---
 
-## 📊 Status
+## Contributing
 
-| Adapter | Status | Version | Maintainer |
-|---------|--------|---------|------------|
-| Cursor | 🟡 Beta | 0.1.0 | [@dotAIslash](https://github.com/dotAIslash) |
-| Windsurf | 🟡 Beta | 0.1.0 | [@dotAIslash](https://github.com/dotAIslash) |
-| Aider | 🔴 Planned | - | Looking for maintainer |
-| Claude | 🔴 Planned | - | Looking for maintainer |
+To add a new adapter:
 
----
-
-## 🤝 Contributing
-
-We need your help building adapters!
-
-### Priority List
-
-1. 🔴 Aider adapter
-2. 🔴 Claude Projects adapter
-3. 🔴 GitHub Copilot adapter
-4. 🔴 Cody adapter
-
-### How to Help
-
-- 🔧 **Build an adapter** for your favorite tool
-- 🐛 **Report bugs** in existing adapters
-- 📝 **Improve documentation**
-- 🧪 **Add test cases**
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+1. Create `src/adapters/mytool.ts`
+2. Extend `BaseAdapter`
+3. Implement `transform()` method
+4. Add tests in `tests/mytool.test.ts`
+5. Export from `src/index.ts`
 
 ---
 
-## 📄 License
+## License
 
-MIT © [dotAIslash](https://github.com/dotAIslash)
+MIT © dotAIslash
 
 ---
 
-<div align="center">
+## Links
 
-**Making VERSA work everywhere**
-
-[Spec](https://github.com/dotAIslash/dotaislash-spec) · [CLI](https://github.com/dotAIslash/dotaislash-cli) · [Schemas](https://github.com/dotAIslash/dotaislash-schemas) · [Examples](https://github.com/dotAIslash/dotaislash-examples)
-
-[⭐ Star us on GitHub](https://github.com/dotAIslash/dotaislash-adapters) · [💬 Discussions](https://github.com/dotAIslash/dotaislash-adapters/discussions)
-
-</div>
+- [VERSA Specification](https://github.com/dotAIslash/dotaislash-spec)
+- [CLI Tool](https://github.com/dotAIslash/dotaislash-cli)
+- [Examples](https://github.com/dotAIslash/dotaislash-examples)
